@@ -10,6 +10,7 @@ import RecipeCard from './RecipeCard'
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { Recipe } from '@/types'
+import { useDebounce } from '@/hooks/useDebounce'
 
 type SortOption = 'name-asc' | 'name-desc' | 'date-asc' | 'date-desc'
 type StructureFilter = 'all' | 'flat' | 'hierarchical'
@@ -22,13 +23,16 @@ export default function RecipeList() {
   const [structureFilter, setStructureFilter] = useState<StructureFilter>('all')
   const [sortOption, setSortOption] = useState<SortOption>('date-desc')
 
+  // 検索クエリのデバウンス処理（300ms遅延）
+  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+
   // フィルタリング・ソート済みのレシピリスト
   const filteredAndSortedRecipes = useMemo(() => {
     let result = [...recipes]
 
     // 検索フィルター（レシピ名と材料名で検索）
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase()
       result = result.filter((recipe) => {
         // レシピ名で検索
         const nameMatch = recipe.name.toLowerCase().includes(query)
@@ -64,7 +68,7 @@ export default function RecipeList() {
     })
 
     return result
-  }, [recipes, searchQuery, structureFilter, sortOption])
+  }, [recipes, debouncedSearchQuery, structureFilter, sortOption])
 
   if (isLoading) {
     return (
@@ -92,33 +96,35 @@ export default function RecipeList() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
           レシピ一覧 ({filteredAndSortedRecipes.length} / {recipes.length})
         </h2>
         <Link
           href="/recipes/new"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="w-full sm:w-auto text-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+          aria-label="新しいレシピを作成"
         >
           + 新規作成
         </Link>
       </div>
 
       {/* 検索・フィルター・ソート */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* 検索ボックス */}
-          <div>
+          <div className="sm:col-span-2 lg:col-span-1">
             <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               検索
             </label>
             <input
               type="text"
               id="search"
-              placeholder="レシピ名または材料名で検索..."
+              placeholder="レシピ名または材料名..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="レシピを検索"
+              className="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             />
           </div>
 
@@ -131,7 +137,8 @@ export default function RecipeList() {
               id="structure-filter"
               value={structureFilter}
               onChange={(e) => setStructureFilter(e.target.value as StructureFilter)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="構造タイプでフィルター"
+              className="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             >
               <option value="all">すべて</option>
               <option value="flat">フラット構造</option>
@@ -148,7 +155,8 @@ export default function RecipeList() {
               id="sort"
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value as SortOption)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="レシピをソート"
+              className="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             >
               <option value="date-desc">作成日が新しい順</option>
               <option value="date-asc">作成日が古い順</option>
@@ -159,30 +167,32 @@ export default function RecipeList() {
         </div>
 
         {/* フィルター結果の表示 */}
-        {(searchQuery || structureFilter !== 'all') && (
-          <div className="mt-4 flex items-center gap-2">
+        {(debouncedSearchQuery || structureFilter !== 'all') && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">
               フィルター適用中:
             </span>
-            {searchQuery && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm">
-                検索: {searchQuery}
+            {debouncedSearchQuery && (
+              <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm">
+                検索: {debouncedSearchQuery}
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="ml-1 hover:text-blue-900 dark:hover:text-blue-100"
+                  className="ml-1 hover:text-blue-900 dark:hover:text-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded transition-colors"
                   aria-label="検索をクリア"
+                  type="button"
                 >
                   ✕
                 </button>
               </span>
             )}
             {structureFilter !== 'all' && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-sm">
+              <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-sm">
                 {structureFilter === 'flat' ? 'フラット構造' : '階層構造'}
                 <button
                   onClick={() => setStructureFilter('all')}
-                  className="ml-1 hover:text-purple-900 dark:hover:text-purple-100"
+                  className="ml-1 hover:text-purple-900 dark:hover:text-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded transition-colors"
                   aria-label="構造フィルターをクリア"
+                  type="button"
                 >
                   ✕
                 </button>
@@ -193,7 +203,9 @@ export default function RecipeList() {
                 setSearchQuery('')
                 setStructureFilter('all')
               }}
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline focus:outline-none focus:ring-2 focus:ring-gray-500 rounded px-1 transition-colors"
+              aria-label="すべてのフィルターをクリア"
+              type="button"
             >
               すべてクリア
             </button>
