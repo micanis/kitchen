@@ -2,7 +2,7 @@
 
 /**
  * レシピ詳細ページ
- * Phase 1: 基本的な表示と倍率調整機能
+ * Phase 2: 階層構造の材料表示に対応
  */
 
 import { useRecipes } from '@/lib/RecipeContext'
@@ -25,7 +25,7 @@ export default function RecipeDetailPage() {
     if (!recipe) return []
 
     return recipe.ingredients.map((ingredient) => {
-      if (!ingredient.amount) {
+      if (!ingredient.amount || ingredient.isGroup) {
         return ingredient
       }
 
@@ -44,6 +44,16 @@ export default function RecipeDetailPage() {
       deleteRecipe(recipeId)
       router.push('/')
     }
+  }
+
+  // 階層構造のインデント計算
+  const getIndentClass = (level: number) => {
+    const indents = {
+      1: 'ml-0',
+      2: 'ml-8',
+      3: 'ml-16',
+    }
+    return indents[level as 1 | 2 | 3] || 'ml-0'
   }
 
   if (!recipe) {
@@ -72,9 +82,12 @@ export default function RecipeDetailPage() {
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
                 {recipe.name}
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                作成日: {new Date(recipe.createdAt).toLocaleDateString('ja-JP')}
-              </p>
+              <div className="flex gap-4 text-sm text-gray-500 dark:text-gray-400">
+                <span>作成日: {new Date(recipe.createdAt).toLocaleDateString('ja-JP')}</span>
+                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
+                  {recipe.structureType === 'flat' ? 'フラット構造' : '階層構造'}
+                </span>
+              </div>
             </div>
             <div className="flex gap-2">
               <Link
@@ -128,30 +141,45 @@ export default function RecipeDetailPage() {
           {/* 材料リスト */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              材料 ({recipe.ingredients.length})
+              材料 ({recipe.ingredients.filter(i => !i.isGroup).length})
             </h2>
             {recipe.ingredients.length === 0 ? (
               <p className="text-gray-500 dark:text-gray-400">材料が登録されていません</p>
             ) : (
-              <ul className="space-y-2">
+              <div className="space-y-2">
                 {scaledIngredients.map((ingredient) => (
-                  <li
+                  <div
                     key={ingredient.id}
-                    className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700 last:border-0"
+                    className={`${getIndentClass(ingredient.level)} ${
+                      ingredient.isGroup ? 'font-bold text-purple-700 dark:text-purple-400 mt-4' : ''
+                    }`}
                   >
-                    <span className="text-gray-900 dark:text-white">{ingredient.name}</span>
-                    <span className="text-gray-600 dark:text-gray-400">
-                      {ingredient.amount ? (
-                        <>
-                          {ingredient.amount} {ingredient.unit}
-                        </>
-                      ) : (
-                        '適量'
-                      )}
-                    </span>
-                  </li>
+                    {ingredient.isGroup ? (
+                      // グループの表示
+                      <div className="flex items-center gap-2 py-2 border-b-2 border-purple-300 dark:border-purple-700">
+                        <span className="text-lg">{ingredient.name}</span>
+                        <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-1 rounded">
+                          グループ
+                        </span>
+                      </div>
+                    ) : (
+                      // 材料の表示
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+                        <span className="text-gray-900 dark:text-white">{ingredient.name}</span>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {ingredient.amount ? (
+                            <>
+                              {ingredient.amount} {ingredient.unit}
+                            </>
+                          ) : (
+                            '適量'
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </div>
 

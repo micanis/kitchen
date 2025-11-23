@@ -8,24 +8,7 @@
 // ============================================
 
 /**
- * レシピ（Phase 1 MVP版）
- * - 名前のみ必須
- * - フラット構造の材料リスト
- * - 倍率ベースの分量調整
- * - シンプルなテキストの作り方
- */
-export interface Recipe {
-  id: string
-  name: string // 必須
-  ingredients: Ingredient[]
-  scalingMultiplier: number // 倍率（デフォルト: 1）
-  instructions?: string // 作り方（任意、プレーンテキスト）
-  createdAt: string // ISO 8601形式
-  updatedAt: string // ISO 8601形式
-}
-
-/**
- * 材料（Phase 1 MVP版 - フラット構造のみ）
+ * 材料（基本）
  */
 export interface Ingredient {
   id: string
@@ -33,6 +16,26 @@ export interface Ingredient {
   amount?: number // 分量（数値部分）
   unit?: string // 単位（例: g, ml, 個）
   order: number // 表示順序
+  level: 1 | 2 | 3 // 階層レベル（1が最上位）
+  parentId?: string // 親グループのID
+  isGroup: boolean // グループかどうか
+}
+
+/**
+ * レシピ（Phase 2対応）
+ * - フラット構造と階層構造の両方をサポート
+ * - 倍率ベースの分量調整
+ * - シンプルなテキストの作り方
+ */
+export interface Recipe {
+  id: string
+  name: string // 必須
+  structureType: RecipeStructureType // 'flat' or 'hierarchical'
+  ingredients: Ingredient[]
+  scalingMultiplier: number // 倍率（デフォルト: 1）
+  instructions?: string // 作り方（任意、プレーンテキスト）
+  createdAt: string // ISO 8601形式
+  updatedAt: string // ISO 8601形式
 }
 
 // ============================================
@@ -60,13 +63,9 @@ export interface ScalingMode {
 }
 
 /**
- * 材料（Phase 2以降 - 階層構造対応）
+ * 階層型材料（後方互換性のためのエイリアス）
  */
-export interface HierarchicalIngredient extends Ingredient {
-  level: 1 | 2 | 3 // 階層レベル（1が最上位）
-  parentId?: string // 親グループのID（階層構造の場合）
-  isGroup: boolean // グループかどうか
-}
+export type HierarchicalIngredient = Ingredient
 
 /**
  * 作り方の形式

@@ -8,6 +8,7 @@ const STORAGE_KEY = 'recipe-app-recipes'
 
 /**
  * LocalStorageからレシピ一覧を取得
+ * Phase 1からPhase 2への移行時に、古いデータを自動変換
  */
 export function getRecipes(): Recipe[] {
   if (typeof window === 'undefined') {
@@ -19,7 +20,24 @@ export function getRecipes(): Recipe[] {
     if (!data) {
       return []
     }
-    return JSON.parse(data) as Recipe[]
+    const recipes = JSON.parse(data) as Recipe[]
+
+    // 古いデータの自動変換（Phase 1 → Phase 2）
+    return recipes.map(recipe => {
+      if (!recipe.structureType) {
+        // structureTypeがない場合はフラット構造として扱う
+        return {
+          ...recipe,
+          structureType: 'flat' as const,
+          ingredients: recipe.ingredients.map(ing => ({
+            ...ing,
+            level: 1 as const,
+            isGroup: false,
+          }))
+        }
+      }
+      return recipe
+    })
   } catch (error) {
     console.error('Failed to load recipes from localStorage:', error)
     return []
