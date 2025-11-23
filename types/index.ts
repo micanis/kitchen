@@ -22,18 +22,21 @@ export interface Ingredient {
 }
 
 /**
- * レシピ（Phase 2対応）
+ * レシピ（Phase 3対応）
  * - フラット構造と階層構造の両方をサポート
- * - 倍率ベースの分量調整
- * - シンプルなテキストの作り方
+ * - 複数の分量調整モード
+ * - ステップバイステップの作り方
+ * - SVGアイコン
  */
 export interface Recipe {
   id: string
   name: string // 必須
+  icon?: string // SVGのBase64またはファイルパス
   structureType: RecipeStructureType // 'flat' or 'hierarchical'
   ingredients: Ingredient[]
-  scalingMultiplier: number // 倍率（デフォルト: 1）
-  instructions?: string // 作り方（任意、プレーンテキスト）
+  scalingMode?: ScalingMode // 分量調整モード（Phase 3）
+  scalingMultiplier: number // 倍率（後方互換性のため保持）
+  instructions?: string | Instructions // 作り方（文字列 or ステップ形式）
   createdAt: string // ISO 8601形式
   updatedAt: string // ISO 8601形式
 }
@@ -53,13 +56,12 @@ export type RecipeStructureType = 'flat' | 'hierarchical'
 export type ScalingModeType = 'servings' | 'ingredient' | 'multiplier'
 
 /**
- * 分量調整設定（Phase 3で実装予定）
+ * 分量調整設定（Phase 3）
  */
 export interface ScalingMode {
   type: ScalingModeType
   baseServings?: number // 人数ベースの場合の基準人数
   baseIngredientId?: string // 特定材料ベースの場合の基準材料ID
-  defaultMultiplier?: number // デフォルト倍率（デフォルト: 1）
 }
 
 /**
@@ -73,7 +75,7 @@ export type HierarchicalIngredient = Ingredient
 export type InstructionsFormat = 'markdown' | 'steps'
 
 /**
- * 作り方（Phase 3で実装予定）
+ * 作り方（Phase 3）
  */
 export interface Instructions {
   format: InstructionsFormat
