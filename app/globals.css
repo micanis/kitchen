@@ -25,3 +25,103 @@ body {
     text-wrap: balance;
   }
 }
+
+/* 印刷用スタイル (Phase 5) */
+@media print {
+  /* 不要な要素を非表示 */
+  .no-print {
+    display: none !important;
+  }
+
+  /* ページ設定 */
+  @page {
+    margin: 2cm;
+    size: A4;
+  }
+
+  /* 基本レイアウト */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  /* ボタンとリンクを非表示 */
+  button,
+  a[href^="/recipes/"][href$="/edit"],
+  input[type="file"],
+  nav,
+  .search-filter {
+    display: none !important;
+  }
+
+  /* レシピ詳細ページの最適化 */
+  main {
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* カードやボックスのシャドウを削除 */
+  .shadow-md,
+  .shadow-lg,
+  .rounded-lg {
+    box-shadow: none !important;
+  }
+
+  /* 背景色を白に */
+  .bg-white,
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-gray-800,
+  .bg-gray-900 {
+    background-color: white !important;
+  }
+
+  /* テキスト色を黒に */
+  .text-gray-900,
+  .text-gray-600,
+  .text-gray-400,
+  .text-white {
+    color: black !important;
+  }
+
+  /* タイトルを大きく */
+  h1 {
+    font-size: 24pt !important;
+    margin-bottom: 1em !important;
+  }
+
+  h2 {
+    font-size: 18pt !important;
+    margin-top: 1em !important;
+    margin-bottom: 0.5em !important;
+  }
+
+  h3 {
+    font-size: 14pt !important;
+  }
+
+  /* 材料リストの整形 */
+  .ingredient-list {
+    page-break-inside: avoid;
+  }
+
+  /* 作り方の整形 */
+  .instructions {
+    page-break-inside: avoid;
+  }
+
+  /* ページ区切り */
+  .page-break-before {
+    page-break-before: always;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+  }
+
+  /* リンクのURL表示 */
+  a[href]:after {
+    content: "";
+  }
+}

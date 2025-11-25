@@ -3,12 +3,13 @@
 /**
  * レシピ一覧コンポーネント
  * Phase 3: 検索・フィルター・ソート機能対応
+ * Phase 5: エクスポート・インポート機能対応
  */
 
 import { useRecipes } from '@/lib/RecipeContext'
 import RecipeCard from './RecipeCard'
 import Link from 'next/link'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { Recipe } from '@/types'
 import { useDebounce } from '@/hooks/useDebounce'
 
@@ -16,15 +17,39 @@ type SortOption = 'name-asc' | 'name-desc' | 'date-asc' | 'date-desc'
 type StructureFilter = 'all' | 'flat' | 'hierarchical'
 
 export default function RecipeList() {
-  const { recipes, isLoading } = useRecipes()
+  const { recipes, isLoading, exportRecipes, importRecipes } = useRecipes()
 
   // 検索・フィルター・ソートの状態管理
   const [searchQuery, setSearchQuery] = useState('')
   const [structureFilter, setStructureFilter] = useState<StructureFilter>('all')
   const [sortOption, setSortOption] = useState<SortOption>('date-desc')
 
+  // インポート関連の状態管理
+  const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   // 検索クエリのデバウンス処理（300ms遅延）
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
+
+  // インポート処理
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const result = await importRecipes(file)
+    setImportMessage({
+      type: result.success ? 'success' : 'error',
+      text: result.message,
+    })
+
+    // 3秒後にメッセージを消す
+    setTimeout(() => setImportMessage(null), 3000)
+
+    // ファイル入力をリセット
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   // フィルタリング・ソート済みのレシピリスト
   const filteredAndSortedRecipes = useMemo(() => {
@@ -96,17 +121,60 @@ export default function RecipeList() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-          レシピ一覧 ({filteredAndSortedRecipes.length} / {recipes.length})
-        </h2>
-        <Link
-          href="/recipes/new"
-          className="w-full sm:w-auto text-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-          aria-label="新しいレシピを作成"
-        >
-          + 新規作成
-        </Link>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+            レシピ一覧 ({filteredAndSortedRecipes.length} / {recipes.length})
+          </h2>
+          <Link
+            href="/recipes/new"
+            className="w-full sm:w-auto text-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            aria-label="新しいレシピを作成"
+          >
+            + 新規作成
+          </Link>
+        </div>
+
+        {/* エクスポート・インポートボタン */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={exportRecipes}
+            disabled={recipes.length === 0}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+            aria-label="レシピをエクスポート"
+          >
+            📥 エクスポート
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors text-sm"
+            aria-label="レシピをインポート"
+          >
+            📤 インポート
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleImport}
+            className="hidden"
+            aria-label="JSONファイルを選択"
+          />
+        </div>
+
+        {/* インポートメッセージ */}
+        {importMessage && (
+          <div
+            className={`p-3 rounded-lg text-sm ${
+              importMessage.type === 'success'
+                ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+            }`}
+            role="alert"
+          >
+            {importMessage.text}
+          </div>
+        )}
       </div>
 
       {/* 検索・フィルター・ソート */}

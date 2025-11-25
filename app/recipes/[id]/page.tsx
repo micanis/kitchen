@@ -3,6 +3,7 @@
 /**
  * レシピ詳細ページ
  * Phase 3: アイコン表示、複数の分量調整モード、ステップバイステップの作り方に対応
+ * Phase 5: レシピ複製機能対応
  */
 
 import { useRecipes } from '@/lib/RecipeContext'
@@ -14,7 +15,7 @@ import Link from 'next/link'
 export default function RecipeDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { getRecipeById, deleteRecipe } = useRecipes()
+  const { getRecipeById, deleteRecipe, duplicateRecipe } = useRecipes()
   const recipeId = params.id as string
 
   const recipe = getRecipeById(recipeId)
@@ -82,6 +83,13 @@ export default function RecipeDetailPage() {
     if (confirm('このレシピを削除してもよろしいですか？')) {
       deleteRecipe(recipeId)
       router.push('/')
+    }
+  }
+
+  const handleDuplicate = () => {
+    const duplicated = duplicateRecipe(recipeId)
+    if (duplicated) {
+      router.push(`/recipes/${duplicated.id}`)
     }
   }
 
@@ -156,16 +164,32 @@ export default function RecipeDetailPage() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex flex-wrap gap-2 flex-shrink-0 no-print">
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors text-sm sm:text-base"
+                aria-label="レシピを印刷"
+              >
+                🖨️ 印刷
+              </button>
               <Link
                 href={`/recipes/${recipe.id}/edit`}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors text-sm sm:text-base"
+                aria-label="レシピを編集"
               >
                 編集
               </Link>
               <button
+                onClick={handleDuplicate}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors text-sm sm:text-base"
+                aria-label="レシピを複製"
+              >
+                複製
+              </button>
+              <button
                 onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors text-sm sm:text-base"
+                aria-label="レシピを削除"
               >
                 削除
               </button>
